@@ -6,6 +6,8 @@ A reddit bot to make moderation easier, especially on mobile.
 Its main goal is to allow mods to remove posts while leaving removal reasons
 via the bot.
 
+This guide is specific to [u/MinecrafthelpmodTeam](https://old.reddit.com/u/MinecrafthelpModTeam) and [r/Minecrafthelp](https://old.reddit.com/r/Minecrafthelp).
+
 Usage
 =====
 
