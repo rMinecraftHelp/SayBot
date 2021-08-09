@@ -12,13 +12,13 @@ from prawcore.exceptions import NotFound
 import yaml
 
 
-REGEX_RULE = re.compile(r"[@!]rule (\w*) *(.*)", re.IGNORECASE)
+REGEX_RULE = re.compile(r"[@!]say (\w*) *(.*)", re.IGNORECASE)
 REGEX_TEMP_BAN = re.compile(
-    r'[@!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
+    r'[@!]notinuse (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
 )
-REGEX_PERM_BAN = re.compile(r'[@!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
-REGEX_REFRESH = re.compile(r"[@!]refresh (.*)", re.IGNORECASE)
-REGEX_SPAM = re.compile(r"[@!]spam$", re.IGNORECASE)
+REGEX_PERM_BAN = re.compile(r'[@!]notinuse "([^"]*)" "([^"]*)"', re.IGNORECASE)
+REGEX_REFRESH = re.compile(r"[@!]refreshsay (.*)", re.IGNORECASE)
+REGEX_SPAM = re.compile(r"[@!]unused$", re.IGNORECASE)
 
 SCHEMA_VALIDATOR = jsonschema.Draft7Validator(
     yaml.safe_load(
@@ -69,7 +69,7 @@ class Bot:
         try:
             reasons = yaml.safe_load(
                 html.unescape(
-                    self.r.subreddit(subreddit).wiki["taskerbot"].content_md
+                    self.r.subreddit(subreddit).wiki["saybot"].content_md
                 )
             )
             SCHEMA_VALIDATOR.validate(reasons)
@@ -77,7 +77,7 @@ class Bot:
         except (jsonschema.exceptions.ValidationError, NotFound):
             reasons = None
             logging.warning(
-                "r/%s/wiki/taskerbot not found or invalid, ignoring", subreddit
+                "r/%s/wiki/saybot not found or invalid, ignoring", subreddit
             )
         return mods, reasons
 
@@ -127,7 +127,7 @@ class Bot:
         if match:
             rule = match.group(1)
             note = match.group(2)
-            logging.info("Rule %s matched.", rule)
+            logging.info("Comment %s matched.", rule)
             if rule not in sub["reasons"]:
                 rule = "Generic"
             msg = sub["reasons"][rule]["Message"]
@@ -135,17 +135,17 @@ class Bot:
                 msg = f"{msg}\n\n{note}"
 
             if report["source"] is not None:
-                report["source"].mod.remove()
-            target.mod.remove()
+                report["source"].mod.approve()
+            target.mod.approve()
 
             author = target.author.name if target.author is not None else "OP"
             header = sub["reasons"]["Header"].format(author=author)
             footer = sub["reasons"]["Footer"].format(author=author)
-            msg = f"{header}\n\n{msg}\n\n{footer}"
+            msg = f"{msg}"
             target.reply(msg).mod.distinguish(sticky=True)
 
             if isinstance(target, Submission):
-                logging.info("Removed submission.")
+                logging.info("Posted comment.")
                 target.mod.flair(sub["reasons"][rule]["Flair"])
             elif isinstance(target, Comment):
                 logging.info("Removed comment.")
@@ -205,14 +205,14 @@ class Bot:
     def log(self, subreddit, msg):
         if not self.logging_enabled:
             return
-        logs_page = self.r.subreddit(subreddit).wiki["taskerbot_logs"]
+        logs_page = self.r.subreddit(subreddit).wiki["saybot_logs"]
         try:
             logs_content = logs_page.content_md
         except TypeError:
             logs_content = ""
         except NotFound:
             logging.warning(
-                "r/%s/wiki/taskerbot_logs not found, disabling logging",
+                "r/%s/wiki/saybot_logs not found, disabling logging",
                 subreddit,
             )
             self.logging_enabled = False
